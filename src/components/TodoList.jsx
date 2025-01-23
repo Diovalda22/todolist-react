@@ -1,13 +1,11 @@
-// src/components/TodoList.js
 import React, { useState, useEffect } from "react";
 import TodoInput from "./TodoInput";
 import TodoItem from "./TodoItem";
 
 function TodoList() {
-  // State untuk menyimpan task
   const [tasks, setTasks] = useState([]);
-  // State untuk status loading
   const [loading, setLoading] = useState(true);
+  const [notification, setNotification] = useState("");
 
   // Ambil data dari localStorage saat pertama kali dimuat
   useEffect(() => {
@@ -15,17 +13,21 @@ function TodoList() {
     if (savedTasks) {
       setTasks(savedTasks);
     }
-    setLoading(false); // Setelah data selesai diambil, set loading false
+    setLoading(false);
   }, []);
 
   // Menyimpan tasks ke localStorage setiap kali ada perubahan
   useEffect(() => {
-    if (tasks.length > 0) {
-      setLoading(true); // Set loading true saat menyimpan
-      localStorage.setItem("tasks", JSON.stringify(tasks));
-      setLoading(false); // Set loading false setelah data disimpan
-    }
+    localStorage.setItem("tasks", JSON.stringify(tasks));
   }, [tasks]);
+
+  // Fungsi untuk menampilkan notifikasi
+  const triggerNotification = (message) => {
+    setNotification(message);
+    setTimeout(() => {
+      setNotification("");
+    }, 3000);
+  };
 
   // Fungsi untuk menambah task baru
   const addTask = (task) => {
@@ -33,20 +35,23 @@ function TodoList() {
       ...tasks,
       { id: Date.now(), text: task, isEditing: false, isCompleted: false },
     ]);
+    triggerNotification("Task successfully added!");
   };
 
   // Fungsi untuk menghapus task
   const removeTask = (id) => {
     setTasks(tasks.filter((task) => task.id !== id));
+    triggerNotification("Task successfully deleted!");
   };
 
-  // Fungsi untuk mengedit taskx    
+  // Fungsi untuk mengedit task
   const editTask = (id, newText) => {
     setTasks(
       tasks.map((task) =>
         task.id === id ? { ...task, text: newText, isEditing: false } : task
       )
     );
+    triggerNotification("Task successfully updated!");
   };
 
   // Fungsi untuk toggle status edit
@@ -73,6 +78,13 @@ function TodoList() {
         To-Do List
       </h1>
 
+      {/* Notifikasi */}
+      {notification && (
+        <div className="mb-4 p-3 text-white bg-green-500 rounded">
+          {notification}
+        </div>
+      )}
+
       {/* Loading indicator */}
       {loading && (
         <div className="text-center mb-6">
@@ -92,7 +104,7 @@ function TodoList() {
             removeTask={removeTask}
             editTask={editTask}
             toggleEdit={toggleEdit}
-            toggleComplete={toggleComplete} // Mengoper fungsi toggleComplete
+            toggleComplete={toggleComplete}
           />
         ))}
       </ul>
