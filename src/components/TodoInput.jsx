@@ -1,36 +1,42 @@
-// src/components/TodoInput.js
 import React, { useState } from "react";
 
 function TodoInput({ addTask }) {
   const [task, setTask] = useState("");
-
-  const handleInputChange = (e) => {
-    setTask(e.target.value);
-  };
+  const [urgentLevel, setUrgentLevel] = useState("Medium"); // Default "Medium"
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (task) {
-      addTask(task);
+    if (task.trim()) {
+      addTask(task, urgentLevel); // Kirim sesuai format yang diharapkan backend
       setTask("");
+      setUrgentLevel("Medium"); // Reset ke default
     }
   };
 
   return (
     <form onSubmit={handleSubmit} className="mb-4 flex justify-center">
-      <input
-        type="text"
-        value={task}
-        onChange={handleInputChange}
-        placeholder="Add a new task"
-        className="p-3 rounded-l-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      {/* Input Task */}
+      <input 
+        type="text" 
+        value={task} 
+        onChange={(e) => setTask(e.target.value)} 
+        placeholder="Add a new task" 
+        className="p-3 rounded-l-md border border-gray-300" 
       />
-      <button
-        type="submit"
-        className="bg-blue-500 text-white p-3 rounded-r-md border border-blue-500 hover:bg-blue-600"
+
+      {/* Dropdown Urgent Level */}
+      <select
+        value={urgentLevel}
+        onChange={(e) => setUrgentLevel(e.target.value)}
+        className="p-3 border border-gray-300"
       >
-        Add
-      </button>
+        <option value="Low">Low</option>
+        <option value="Medium">Normal</option>
+        <option value="High">High</option>
+      </select>
+
+      {/* Tombol Add */}
+      <button type="submit" className="bg-blue-500 text-white p-3 rounded-r-md">Add</button>
     </form>
   );
 }
