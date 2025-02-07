@@ -1,113 +1,140 @@
 import React, { useState, useEffect } from "react";
 import TodoInput from "./TodoInput";
 import TodoItem from "./TodoItem";
+import VectorImg from "../assets/vector.png";
+import Navbar from "./Navbar";
+import ClientApi from "../Utils/ClientApi";
+import { Navigate } from "react-router-dom";
 
 function TodoList() {
-  const [tasks, setTasks] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [notification, setNotification] = useState("");
+  const [dataTask, setDataTask] = useState([]);
 
-  // Ambil data dari localStorage saat pertama kali dimuat
+  if(localStorage.getItem('token') == null) {
+    return <Navigate to={'/login'}/>
+  }
+
+  // 1️⃣ Ambil daftar task dari API saat komponen dimuat
   useEffect(() => {
-    const savedTasks = JSON.parse(localStorage.getItem("tasks"));
-    if (savedTasks) {
-      setTasks(savedTasks);
-    }
-    setLoading(false);
+    ClientApi.get("/tasks")
+      .then(({ data }) => {
+        setDataTask(data.data); // Sesuaikan dengan struktur response dari Laravel
+      })
+      .catch((error) => {
+        console.error("Gagal mengambil data:", error);
+      });
   }, []);
 
-  // Menyimpan tasks ke localStorage setiap kali ada perubahan
-  useEffect(() => {
-    localStorage.setItem("tasks", JSON.stringify(tasks));
-  }, [tasks]);
-
-  // Fungsi untuk menampilkan notifikasi
-  const triggerNotification = (message) => {
-    setNotification(message);
-    setTimeout(() => {
-      setNotification("");
-    }, 3000);
+  // 2️⃣ Fungsi menambah task (POST ke API)
+  const addTask = (title, urgent_level) => {
+    const token = localStorage.getItem("token");
+    const user_id = localStorage.getItem("user_id");
+  
+    if (!token || !user_id) {
+      console.error("Token atau User ID tidak ditemukan!");
+      return;
+    }
+  
+    ClientApi.post(
+      "/tasks",
+      { title,urgent_level, isCompleted: false, user_id },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
+      .then(({ data }) => {
+        setDataTask([...dataTask, data.data]); // Tambahkan task baru ke state
+      })
+      .catch((error) => {
+        console.error("Gagal menambahkan task:", error);
+      });
   };
 
-  // Fungsi untuk menambah task baru
-  const addTask = (task) => {
-    setTasks([
-      ...tasks,
-      { id: Date.now(), text: task, isEditing: false, isCompleted: false },
-    ]);
-    triggerNotification("Task successfully added!");
-  };
-
-  // Fungsi untuk menghapus task
+  // 3️⃣ Fungsi menghapus task (DELETE ke API)
   const removeTask = (id) => {
-    setTasks(tasks.filter((task) => task.id !== id));
-    triggerNotification("Task successfully deleted!");
+    ClientApi.delete(`/tasks/${id}`)
+      .then(() => {
+        setDataTask(dataTask.filter((task) => task.id !== id));
+      })
+      .catch((error) => {
+        console.error("Gagal menghapus task:", error);
+      });
   };
 
-  // Fungsi untuk mengedit task
-  const editTask = (id, newText) => {
-    setTasks(
-      tasks.map((task) =>
-        task.id === id ? { ...task, text: newText, isEditing: false } : task
-      )
-    );
-    triggerNotification("Task successfully updated!");
-  };
+  // 4️⃣ Fungsi mengedit task (PUT ke API)
+const editTask = (id, newTitle, newUrgentLevel) => {
+  ClientApi.put(`/tasks/${id}`, { title: newTitle, urgent_level: newUrgentLevel })
+    .then(() => {
+      setDataTask(
+        dataTask.map((task) =>
+          task.id === id
+            ? { ...task, title: newTitle, urgent_level: newUrgentLevel, isEditing: false }
+            : task
+        )
+      );
+    })
+    .catch((error) => {
+      console.error("Gagal mengedit task:", error);
+    });
+};
 
-  // Fungsi untuk toggle status edit
+
+  // 5️⃣ Fungsi toggle edit mode
   const toggleEdit = (id) => {
-    setTasks(
-      tasks.map((task) =>
+    setDataTask(
+      dataTask.map((task) =>
         task.id === id ? { ...task, isEditing: !task.isEditing } : task
       )
     );
   };
 
-  // Fungsi untuk toggle status selesai
-  const toggleComplete = (id) => {
-    setTasks(
-      tasks.map((task) =>
-        task.id === id ? { ...task, isCompleted: !task.isCompleted } : task
-      )
-    );
+  // 6️⃣ Fungsi toggle task selesai (PATCH ke API)
+  const toggleComplete = (id, currentStatus) => {
+    const updatedStatus = !currentStatus; // 👈 Pastikan nilai baru hanya dihitung sekali
+  
+    ClientApi.patch(`/tasks/${id}`, { isCompleted: updatedStatus })
+      .then(() => {
+        setDataTask((prevTasks) =>
+          prevTasks.map((task) =>
+            task.id === id ? { ...task, isCompleted: updatedStatus } : task
+          )
+        );
+      })
+      .catch((error) => {
+        console.error("Gagal mengubah status:", error);
+      });
   };
+  
 
   return (
-    <div className="max-w-lg mx-auto p-4 bg-blue-50 shadow-2xl rounded-xl">
-      <h1 className="text-3xl font-bold text-center text-gray-700 mb-6">
-        To-Do List
-      </h1>
+    <div className="bg-pink-50 p-4">
+      <Navbar />
+      <div className="min-h-screen flex items-center justify-center">
+        <img src={VectorImg} alt="gambar" className="mx-[80px]" />
 
-      {/* Notifikasi */}
-      {notification && (
-        <div className="mb-4 p-3 text-white bg-green-500 rounded">
-          {notification}
+        <div className="flex flex-col gap-4">
+          <div className="bg-purple-300 p-2">
+            <h1 className="text-2xl font-bold text-center text-white">To-Do List</h1>
+          </div>
+          <div className="max-w-lg mx-auto p-8 bg-white shadow-2xl">
+            <TodoInput addTask={addTask} />
+
+            <ul className="space-y-4 mt-6">
+              {dataTask.map((task) => (
+                <TodoItem
+                  key={task.id}
+                  task={task}
+                  removeTask={removeTask}
+                  editTask={editTask}
+                  toggleEdit={toggleEdit}
+                  toggleComplete={toggleComplete}
+                />
+              ))}
+            </ul>
+          </div>
         </div>
-      )}
-
-      {/* Loading indicator */}
-      {loading && (
-        <div className="text-center mb-6">
-          <div className="animate-spin border-t-2 border-blue-500 rounded-full w-12 h-12 mx-auto border-4 border-solid"></div>
-        </div>
-      )}
-
-      {/* Input untuk menambah task */}
-      <TodoInput addTask={addTask} />
-
-      {/* Daftar tugas */}
-      <ul className="space-y-4 mt-6">
-        {tasks.map((task) => (
-          <TodoItem
-            key={task.id}
-            task={task}
-            removeTask={removeTask}
-            editTask={editTask}
-            toggleEdit={toggleEdit}
-            toggleComplete={toggleComplete}
-          />
-        ))}
-      </ul>
+      </div>
     </div>
   );
 }

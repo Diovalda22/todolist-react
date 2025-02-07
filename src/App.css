@@ -9,7 +9,7 @@ src/App.css
   align-items: center;
   height: 100vh; /* Menyesuaikan tinggi halaman */
 }
-/* ini adalah gambar */
+/* ini adalah */
 /* .bg-image {
   background-image: url('./assets/bibi.jpg');
   background-repeat: no-repeat  ;
@@ -63,4 +63,11 @@ li button {
   grid-template-columns: repeat(4, 1fr);
   gap: 10px;
   width: 220px;
+}
+
+.wave-image {
+  background-image: url('./assets/ombak-membahana.png');
+  position: absolute;
+  bottom: 0;
+  z-index: 999;
 }
