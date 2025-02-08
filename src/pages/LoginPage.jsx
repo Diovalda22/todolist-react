@@ -28,7 +28,7 @@ const LoginPage = () => {
   };
 
   if (localStorage.getItem("token") !== null) {
-    return <Navigate to={"/todo"} />;
+    return <Navigate to={"/"} />;
   }
 
   return (
