@@ -8,6 +8,7 @@ import { Navigate } from "react-router-dom";
 
 function TodoList() {
   const [dataTask, setDataTask] = useState([]);
+  const list_id = localStorage.getItem("list_id");
 
   if(localStorage.getItem('token') == null) {
     return <Navigate to={'/login'}/>
@@ -15,7 +16,9 @@ function TodoList() {
 
   // 1️⃣ Ambil daftar task dari API saat komponen dimuat
   useEffect(() => {
-    ClientApi.get("/tasks")
+    ClientApi.get("/tasks", {
+      params: { list_id }
+  })
       .then(({ data }) => {
         setDataTask(data.data); // Sesuaikan dengan struktur response dari Laravel
       })
@@ -28,6 +31,7 @@ function TodoList() {
   const addTask = (title, urgent_level) => {
     const token = localStorage.getItem("token");
     const user_id = localStorage.getItem("user_id");
+    // const list_id = localStorage.getItem("list_id");
   
     if (!token || !user_id) {
       console.error("Token atau User ID tidak ditemukan!");
@@ -36,7 +40,7 @@ function TodoList() {
   
     ClientApi.post(
       "/tasks",
-      { title,urgent_level, isCompleted: false, user_id },
+      { title,urgent_level, isCompleted: false, user_id, list_id },
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -115,7 +119,7 @@ const editTask = (id, newTitle, newUrgentLevel) => {
 
         <div className="flex flex-col gap-4">
           <div className="bg-purple-300 p-2">
-            <h1 className="text-2xl font-bold text-center text-white">To-Do List</h1>
+            <h1 className="text-2xl font-bold text-center text-white">{localStorage.getItem('name_list')}</h1>
           </div>
           <div className="max-w-lg mx-auto p-8 bg-white shadow-2xl">
             <TodoInput addTask={addTask} />
