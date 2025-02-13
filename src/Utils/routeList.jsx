@@ -14,7 +14,7 @@ const routes = createBrowserRouter([
         element: <TodoList />,
     },
     {
-        path:'/list',
+        path:'/',
         element:<TaskList/>,    
     },
     {

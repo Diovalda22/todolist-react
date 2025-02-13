@@ -2,20 +2,20 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Navigate, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
+import { Pencil, Trash2 } from "lucide-react";
 
 function TaskList() {
   const [tasks, setTasks] = useState([]);
   const [newTask, setNewTask] = useState("");
   const [editingTask, setEditingTask] = useState(null);
   const [editedName, setEditedName] = useState("");
+  const [notification, setNotification] = useState({ message: "", type: "" });
   const navigate = useNavigate();
 
-  // Redirect jika tidak ada token
   if (!localStorage.getItem("token")) {
     return <Navigate to="/login" />;
   }
 
-  // Ambil daftar task dari backend
   useEffect(() => {
     axios
       .get("http://localhost:8000/api/list", {
@@ -24,11 +24,20 @@ function TaskList() {
       .then((response) => {
         setTasks(response.data.data);
       })
-      .catch((error) => console.error("Gagal mengambil data", error));
+      .catch(() => showNotification("Gagal mengambil data!", "error"));
   }, []);
 
-  // Tambah tugas baru
-  const addTask = () => {
+  const showNotification = (message, type) => {
+    setNotification({ message, type });
+    setTimeout(() => {
+      setNotification({ message: "", type: "" });
+    }, 3000);
+  };
+
+  const addTask = (e) => {
+    e.preventDefault();
+    if (!newTask.trim()) return;
+
     axios
       .post(
         "http://localhost:8000/api/list",
@@ -38,11 +47,11 @@ function TaskList() {
       .then((response) => {
         setTasks([...tasks, response.data.data]);
         setNewTask("");
+        showNotification("✅ Tugas berhasil ditambahkan!", "success");
       })
-      .catch((error) => console.error("Gagal menambah task", error));
+      .catch(() => showNotification("❌ Gagal menambah tugas!", "error"));
   };
 
-  // Hapus tugas
   const deleteTask = (id) => {
     axios
       .delete(`http://localhost:8000/api/list/${id}`, {
@@ -50,11 +59,11 @@ function TaskList() {
       })
       .then(() => {
         setTasks(tasks.filter((task) => task.id !== id));
+        showNotification("🗑 Tugas berhasil dihapus!", "success");
       })
-      .catch((error) => console.error("Gagal menghapus task", error));
+      .catch(() => showNotification("❌ Gagal menghapus tugas!", "error"));
   };
 
-  // Edit tugas
   const startEditing = (task) => {
     setEditingTask(task.id);
     setEditedName(task.name);
@@ -70,59 +79,71 @@ function TaskList() {
       .then(() => {
         setTasks(tasks.map((task) => (task.id === id ? { ...task, name: editedName } : task)));
         setEditingTask(null);
+        showNotification("✏ Tugas berhasil diperbarui!", "success");
       })
-      .catch((error) => console.error("Gagal mengedit task", error));
+      .catch(() => showNotification("❌ Gagal mengedit tugas!", "error"));
   };
 
-  // Redirect ke halaman detail task
   const viewTask = (id, name) => {
-    console.log(name);
-    
     navigate(`/tasks/${id}`);
-    localStorage.setItem('list_id', id);
-    localStorage.setItem('name_list', name);
+    localStorage.setItem("list_id", id);
+    localStorage.setItem("name_list", name);
   };
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="container p-6 bg-gradient-to-r from-pink-200 via-purple-200 to-pink-300 min-h-screen flex flex-col items-center relative">
       <Navbar />
-      <h1 className="text-2xl font-bold mb-4">Daftar Tugas</h1>
-      <div className="mb-4">
+      <h1 className="text-3xl font-bold text-purple-700 my-6 text-center">Daftar Tugas</h1>
+      
+      {notification.message && (
+        <div
+          className={`absolute top-24 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-lg text-white shadow-lg ${
+            notification.type === "success" ? "bg-green-500" : "bg-red-500"
+          }`}
+        >
+          {notification.message}
+        </div>
+      )}
+
+      <div className="mb-6 flex justify-center">
         <input
           type="text"
-          className="border p-2 w-80"
+          className="border p-3 w-80 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-purple-400"
           value={newTask}
           onChange={(e) => setNewTask(e.target.value)}
           placeholder="Tambahkan tugas baru..."
         />
-        <button className="ml-2 bg-blue-500 text-white p-2" onClick={addTask}>
+        <button className="ml-3 bg-purple-500 hover:bg-purple-600 text-white p-3 rounded-lg shadow-md" onClick={addTask}>
           Tambah
         </button>
       </div>
-      <ul>
+      
+      <ul className="w-[500px] mx-auto bg-white p-6 rounded-lg shadow-md">
         {tasks.map((task) => (
-          <li key={task.id} className="flex justify-between items-center p-2 border-b">
-            <span onClick={() => viewTask(task.id, task.name)} className="cursor-pointer">{task.name}</span>
-            <div>
+          <li key={task.id} className="flex justify-between items-center p-3 border-b border-gray-200">
+            <span onClick={() => viewTask(task.id, task.name)} className="cursor-pointer text-purple-700 font-medium hover:underline">
+              {task.name}
+            </span>
+            <div className="flex items-center gap-2">
               {editingTask === task.id ? (
                 <input
                   type="text"
-                  className="border p-1"
+                  className="border p-2 rounded-md"
                   value={editedName}
                   onChange={(e) => setEditedName(e.target.value)}
                 />
               ) : null}
               {editingTask === task.id ? (
-                <button className="ml-2 bg-green-500 text-white p-2" onClick={() => saveEdit(task.id)}>
+                <button className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-md" onClick={() => saveEdit(task.id)}>
                   Simpan
                 </button>
               ) : (
-                <button className="ml-2 bg-yellow-500 text-white p-2" onClick={() => startEditing(task)}>
-                  Edit
+                <button className="bg-yellow-500 hover:bg-yellow-600 text-white p-2 rounded-md flex items-center" onClick={() => startEditing(task)}>
+                  <Pencil size={16} />
                 </button>
               )}
-              <button className="ml-2 bg-red-500 text-white p-2" onClick={() => deleteTask(task.id)}>
-                Hapus
+              <button className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-md flex items-center" onClick={() => deleteTask(task.id)}>
+                <Trash2 size={16} />
               </button>
             </div>
           </li>
