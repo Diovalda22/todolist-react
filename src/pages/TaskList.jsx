@@ -2,14 +2,16 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Navigate, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Search } from "lucide-react";
 
 function TaskList() {
   const [tasks, setTasks] = useState([]);
+  const [filteredTasks, setFilteredTasks] = useState([]);
   const [newTask, setNewTask] = useState("");
   const [editingTask, setEditingTask] = useState(null);
   const [editedName, setEditedName] = useState("");
   const [notification, setNotification] = useState({ message: "", type: "" });
+  const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
 
   if (!localStorage.getItem("token")) {
@@ -23,9 +25,18 @@ function TaskList() {
       })
       .then((response) => {
         setTasks(response.data.data);
+        setFilteredTasks(response.data.data);
       })
       .catch(() => showNotification("Gagal mengambil data!", "error"));
   }, []);
+
+  useEffect(() => {
+    setFilteredTasks(
+      tasks.filter((task) =>
+        task.name.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    );
+  }, [searchTerm, tasks]);
 
   const showNotification = (message, type) => {
     setNotification({ message, type });
@@ -95,16 +106,17 @@ function TaskList() {
       <Navbar />
       <h1 className="text-3xl font-bold text-purple-700 my-6 text-center">Daftar Tugas</h1>
       
-      {notification.message && (
-        <div
-          className={`absolute top-24 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-lg text-white shadow-lg ${
-            notification.type === "success" ? "bg-green-500" : "bg-red-500"
-          }`}
-        >
-          {notification.message}
-        </div>
-      )}
-
+      <div className="mb-4 flex items-center border p-2 rounded-lg shadow-md focus-within:ring-2 focus-within:ring-purple-400">
+        <Search size={20} className="text-gray-600 mr-2" />
+        <input
+          type="text"
+          className="focus:outline-none"
+          placeholder="Cari tugas..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
+      
       <div className="mb-6 flex justify-center">
         <input
           type="text"
@@ -119,7 +131,7 @@ function TaskList() {
       </div>
       
       <ul className="w-[500px] mx-auto bg-white p-6 rounded-lg shadow-md">
-        {tasks.map((task) => (
+        {filteredTasks.map((task) => (
           <li key={task.id} className="flex justify-between items-center p-3 border-b border-gray-200">
             <span onClick={() => viewTask(task.id, task.name)} className="cursor-pointer text-purple-700 font-medium hover:underline">
               {task.name}

@@ -40,12 +40,12 @@ function Navbar() {
       
       {/* Navbar Items */}
       <div className="flex items-center gap-4">
-        {/* Tombol Todolist */}
+        {/* Tombol Todolist (Hanya Ikon, Tanpa Teks) */}
         <button
           onClick={() => navigate('/')}
-          className="flex items-center gap-2 bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-md transition-all"
+          className="flex items-center bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-md transition-all"
         >
-          <ListChecks /> Todolist
+          <ListChecks />
         </button>
         
         {/* User Profile Dropdown */}

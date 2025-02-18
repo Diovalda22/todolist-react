@@ -3,12 +3,12 @@ import React, { useState } from "react";
 function TodoInput({ addTask }) {
   const [task, setTask] = useState("");
   const [urgentLevel, setUrgentLevel] = useState("Medium"); // Default "Medium"
+  const [deadline, setDeadline] = useState(""); // State untuk deadline
   const [notification, setNotification] = useState({ message: "", type: "" });
 
   // Fungsi untuk menampilkan notifikasi
   const showNotification = (message, type) => {
     setNotification({ message, type });
-
     setTimeout(() => {
       setNotification({ message: "", type: "" });
     }, 3000);
@@ -16,13 +16,14 @@ function TodoInput({ addTask }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (task.trim()) {
-      addTask(task, urgentLevel);
+    if (task.trim() && deadline) {
+      addTask(task, urgentLevel, deadline);
       showNotification("✅ Tugas berhasil ditambahkan!", "success");
       setTask("");
-      setUrgentLevel("Medium"); // Reset ke default
+      setUrgentLevel("Medium");
+      setDeadline(""); // Reset deadline setelah submit
     } else {
-      showNotification("⚠ Teks tugas tidak boleh kosong!", "error");
+      showNotification("⚠ Teks tugas dan deadline tidak boleh kosong!", "error");
     }
   };
 
@@ -40,31 +41,44 @@ function TodoInput({ addTask }) {
       )}
 
       {/* Form Input */}
-      <form onSubmit={handleSubmit} className="mb-4 flex justify-center">
+      <form onSubmit={handleSubmit} className="mb-4 flex justify-center flex-col gap-2">
         {/* Input Task */}
+        <div className="flex gap-2">
+
         <input 
           type="text" 
           value={task} 
           onChange={(e) => setTask(e.target.value)} 
           placeholder="Tambahkan tugas baru..." 
-          className="p-3 rounded-l-md border border-gray-300" 
+          className="p-3 rounded-md border border-gray-300" 
         />
 
         {/* Dropdown Urgent Level */}
         <select
           value={urgentLevel}
           onChange={(e) => setUrgentLevel(e.target.value)}
-          className="p-3 border border-gray-300"
-        >
+          className="p-3 border border-gray-300 rounded-md"
+          >
           <option value="Low">Low</option>
           <option value="Medium">Medium</option>
           <option value="High">High</option>
         </select>
+          </div>
+
+        {/* Input Deadline */}
+        <div className="flex gap-2">
+        <input
+          type="date"
+          value={deadline}
+          onChange={(e) => setDeadline(e.target.value)}
+          className="p-3 border border-gray-300 rounded-md"
+          />
 
         {/* Tombol Add */}
-        <button type="submit" className="bg-blue-500 text-white p-3 rounded-r-md hover:bg-blue-600">
+        <button type="submit" className="bg-blue-500 text-white p-3 rounded-md hover:bg-blue-600">
           Add
         </button>
+        </div>
       </form>
     </div>
   );
